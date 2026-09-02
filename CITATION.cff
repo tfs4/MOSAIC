@@ -1,0 +1,50 @@
+cff-version: 1.2.0
+message: "If you use this code, please cite the MOSAIC paper (preferred-citation) and this repository."
+title: "MOSAIC: Morphology-Oriented Spatial Attention for Inferring Cell Expression"
+type: software
+version: 1.0.0
+repository-code: "https://github.com/tfs4/MOSAIC"
+license: "TBD"
+authors:
+  - family-names: Fernandes
+    given-names: Thiago
+    email: thiago.sousa@ifg.edu.br
+    affiliation: "Universidade Federal de Goiás, Goiânia, Brazil"
+  - family-names: Camilo
+    given-names: Celso
+    affiliation: "Universidade Federal de Goiás, Goiânia, Brazil"
+  - family-names: Nakaya
+    given-names: Helder Takashi Imoto
+    affiliation: "Hospital Israelita Albert Einstein, São Paulo, Brazil"
+  - family-names: Simizo
+    given-names: Adriana
+    affiliation: "Faculdade Israelita de Ciências da Saúde Albert Einstein, São Paulo, Brazil"
+  - family-names: Morais
+    given-names: Mauro César Cafundó
+    affiliation: "Faculdade de Ciências Farmacêuticas, Universidade de São Paulo; Institut Pasteur de São Paulo, Brazil"
+  - family-names: Vesco
+    given-names: Matheus Farinaro
+    affiliation: "Hospital Israelita Albert Einstein, São Paulo, Brazil"
+  - family-names: de-Mira
+    given-names: Guilherme Rodrigues
+    affiliation: "Faculdade de Ciências Farmacêuticas, Universidade de São Paulo, Brazil"
+preferred-citation:
+  type: article
+  title: "MOSAIC: single-cell expression from H&E histology"
+  journal: "Scientific Reports (under review)"
+  year: 2026
+  authors:
+    - family-names: Fernandes
+      given-names: Thiago
+    - family-names: Camilo
+      given-names: Celso
+    - family-names: Nakaya
+      given-names: Helder Takashi Imoto
+    - family-names: Simizo
+      given-names: Adriana
+    - family-names: Morais
+      given-names: Mauro César Cafundó
+    - family-names: Vesco
+      given-names: Matheus Farinaro
+    - family-names: de-Mira
+      given-names: Guilherme Rodrigues

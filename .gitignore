@@ -1,0 +1,41 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.env
+
+# Data (never versioned - see data/README.md)
+data/*
+!data/README.md
+*.zarr
+*.npy
+*.npz
+*.zip
+*.tar
+*.tar.gz
+*.h5ad
+
+# Model checkpoints
+*.pt
+*.pth
+
+# Experiment outputs (keep small tables, drop heavy artefacts)
+results/*
+!results/README.md
+
+# Images
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.webp
+*.tif
+*.tiff
+
+# Editors / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
