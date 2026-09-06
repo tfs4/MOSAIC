@@ -33,11 +33,15 @@ MOSAIC/
 │   └── pipeline.py              core library: datasets, models, training, evaluation, CLI
 ├── scripts/                     entry points (run from the repository root)
 │   ├── prepare_patches.py       Zarr slide -> per-cell PNG patches + manifest.csv + expr.npy
+│   ├── count_images.py          count PNG patches per slide (must total 571,011)
 │   ├── verify_dataset.py        sanity checks and split sizes vs the paper
 │   ├── train_mosaic.py          main experiment (Phase A + Phase B)          <-- start here
 │   ├── run_ablation.py          K / aggregation ablation on identical val/test cells
+│   ├── run_slide_rotation.py    rotate which slide is train / val / test
+│   ├── run_seed_sweep.py        paper protocol over extra seeds (0, 20; 42 already run)
 │   ├── run_k_sweep.py           unattended K + seed sweep (server)
 │   ├── predict_expression.py    Phase A inference for a whole slide from a checkpoint
+│   ├── expression_metrics.py    Phase A PCC / Spearman / MAE / RMSE on val and test
 │   ├── gene_level_analysis.py   per-gene PCC, top/bottom genes, abundance/variance strata
 │   ├── classification_tables.py Phase B baselines, per-class metrics, class counts
 │   ├── plot_ablation.py         ablation bar charts
@@ -71,8 +75,10 @@ CPU-only execution works but is impractical for training (each training step enc
 ## 3. Data
 
 The three slides are ulcerative-colitis colon sections of the **Autoimmune Multimodal
-Learning Challenge (AMLC)** dataset (10x Xenium 460-gene panel with paired H&E). They are
-distributed by the challenge organisers and are **not** included here.
+Learning Challenge (AMLC)** dataset (10x Xenium 460-gene panel with paired H&E). The raw
+Zarr stores are distributed by the challenge organisers and are **not** included here.
+Prepared 128×128 patch archives (one zip per slide) can be downloaded from Google Drive
+as below.
 
 Expected layout (details in [`data/README.md`](data/README.md)):
 
@@ -82,7 +88,81 @@ data/patches128_2_UC7/...                                                   # va
 data/patches128_2_UC1/...                                                   # test   202,528 cells (10 % used)
 ```
 
-Build these folders from the AMLC Zarr stores and the cell-type tables:
+### 3.1 Download the prepared archives
+
+From the repository root. If `python` is not on `PATH`, use `python3`. Download **one
+slide at a time** (each zip is large) and confirm `manifest.csv` + `expr.npy` before
+starting the next:
+
+```bash
+pip install -U gdown
+mkdir -p data && cd data
+
+python3 -m gdown "https://drive.google.com/uc?id=1mG9DtWTTpNkAJkKd4H9PASnfFyGXIKQ-" -O patches128_2_UC1.zip
+unzip -o patches128_2_UC1.zip
+ls patches128_2_UC1/manifest.csv patches128_2_UC1/expr.npy
+
+python3 -m gdown "https://drive.google.com/uc?id=1dIQ9PRF2AMd9z_MS4r5vR8Jpb-sR2uAV" -O patches128_2_UC6.zip
+unzip -o patches128_2_UC6.zip
+ls patches128_2_UC6/manifest.csv patches128_2_UC6/expr.npy
+
+python3 -m gdown "https://drive.google.com/uc?id=15yNvqGzWKbMyRwtF0sSKHMQdWSpm6F7_" -O patches128_2_UC7.zip
+unzip -o patches128_2_UC7.zip
+ls patches128_2_UC7/manifest.csv patches128_2_UC7/expr.npy
+
+cd ..
+rm -f data/patches128_2_UC*.zip
+```
+
+Use `python3 -m gdown` rather than the `gdown` binary: some images ship an older CLI
+without `--fuzzy`. If a zip unpacks one extra nested folder (e.g.
+`data/patches128_2_UC1/patches128_2_UC1/`), move the inner folder up so that
+`manifest.csv` sits directly under `data/patches128_2_UC*`.
+
+Alternatively, `tools/download_datasets_gdrive.py` does the same three downloads and
+renames the folders automatically (`pip install gdown` first):
+
+```bash
+python3 tools/download_datasets_gdrive.py \
+    --uc1 "https://drive.google.com/file/d/1mG9DtWTTpNkAJkKd4H9PASnfFyGXIKQ-/view?usp=sharing" \
+    --uc6 "https://drive.google.com/file/d/1dIQ9PRF2AMd9z_MS4r5vR8Jpb-sR2uAV/view?usp=sharing" \
+    --uc7 "https://drive.google.com/file/d/15yNvqGzWKbMyRwtF0sSKHMQdWSpm6F7_/view?usp=sharing" \
+    --data_root data
+```
+
+### 3.2 Count the patches
+
+After the three folders are in place, from the repository root:
+
+```bash
+python3 scripts/count_images.py --data_root data
+```
+
+The counts must match the paper (one PNG per nucleus):
+
+```
+slide    folder                                         images
+----------------------------------------------------------------
+UC1      /workspace/MOSAIC/data/patches128_2_UC1       202,528
+UC6      /workspace/MOSAIC/data/patches128_2_UC6       223,781
+UC7      /workspace/MOSAIC/data/patches128_2_UC7       144,702
+----------------------------------------------------------------
+TOTAL    /workspace/MOSAIC/data                        571,011
+```
+
+The `folder` column is the absolute path, so it will differ if the repo is not at
+`/workspace/MOSAIC`. The three integers and the total **571,011** must match. Then:
+
+```bash
+python3 scripts/verify_dataset.py --data_root data
+```
+
+which also checks that the seed-42 val/test subset sizes are 28,941 (UC7 20 %) and
+20,253 (UC1 10 %).
+
+### 3.3 Build the folders from AMLC Zarr (optional)
+
+If you have the original Zarr stores instead of the zips:
 
 ```bash
 for UC in UC6 UC7 UC1; do
@@ -91,7 +171,8 @@ for UC in UC6 UC7 UC1; do
       --csv_path  data/raw/${UC}_I_cell_group_positions.csv \
       --out_dir   data/patches128_2_${UC} --img_size 128 --size_crop 1.0
 done
-python scripts/verify_dataset.py --data_root data          # split sizes must match the paper
+python scripts/count_images.py --data_root data
+python scripts/verify_dataset.py --data_root data
 ```
 
 `--size_crop 1.0` doubles the nucleus bounding box before resizing to 128x128 (2x crop).
@@ -133,19 +214,27 @@ part: every step encodes 1 + K patches per cell for ~224k cells, i.e. on the ord
 to two hours per epoch on a single modern GPU in our runs; early stopping usually ends
 training well before the 30-epoch cap. Phase B takes a few minutes.
 
-Seed robustness (paper: 0.600 +- 0.001 accuracy over seeds 42, 43, 44):
+Seed robustness (Reviewer 2 item 3). Seed 42 is the paper run; only 0 and 20 are extra:
 
 ```bash
-for S in 43 44; do
-  python scripts/train_mosaic.py --k_neighbors 6 --seed $S --out_dir results/mosaic_k6_seed$S
-done
+python3 scripts/run_seed_sweep.py \
+    --data_root data --num_workers 20 \
+    --seeds 0,20 --out_base results/seed_sweep
 ```
+
+Each seed redraws the UC7 20% / UC1 10% subsets and retrains. Folders:
+`results/seed_sweep/mosaic_k6_seed0` and `mosaic_k6_seed20`. Summary:
+`results/seed_sweep/seed_sweep_results.csv`. Combine with `results/mosaic_k6_seed42`
+for the three-seed mean ± s.d. in the manuscript.
 
 ### 4.2 Tables and gene-level analysis from a finished run
 
 ```bash
 # Table 1 / ED Table 3-4: chance, majority, MOSAIC, and the ceiling MLP trained on measured expression
 python scripts/classification_tables.py --run_dir results/mosaic_k6_seed42
+
+# Phase A: mean per-gene PCC / Spearman, MAE, RMSE (val + test) -> expression_metrics.csv
+python scripts/expression_metrics.py --run_dir results/mosaic_k6_seed42
 
 # ED Table 2 and 9: per-gene PCC, top/bottom-20 genes, abundance and variance quartiles
 python scripts/gene_level_analysis.py --run_dir results/mosaic_k6_seed42
@@ -165,6 +254,27 @@ validation/test indices written by the first run, so all numbers are computed on
 the same cells. To compare aggregation operators at fixed K use, e.g.,
 `--ks 6 --aggregations attention,mean,max`. Resume an interrupted grid with
 `--start_from N --indices_dir results/ablation_k/k0_agg_n_a`.
+
+### 4.3.1 Rotate train / val / test slides
+
+Same fractions as the paper (100 % train, 20 % val, 10 % test), but each of the three
+slides takes a turn as the training set. The original assignment (UC6 / UC7 / UC1) is
+skipped unless `--include_paper_split` is set. Outputs go under `results/slide_rotation/`,
+not `results/mosaic_k6_seed42`.
+
+```bash
+python3 scripts/run_slide_rotation.py \
+    --data_root data --seed 42 --batch_size 64 --num_workers 20 \
+    --out_base results/slide_rotation
+```
+
+This runs, in order:
+
+1. train UC7 (100 %) | val UC1 (20 %) | test UC6 (10 %) → `results/slide_rotation/trainUC7_valUC1_testUC6_seed42/`
+2. train UC1 (100 %) | val UC6 (20 %) | test UC7 (10 %) → `results/slide_rotation/trainUC1_valUC6_testUC7_seed42/`
+
+A one-row-per-run summary is written to `results/slide_rotation/rotation_results.csv`. Resume
+after an interruption with `--start_from 1`.
 
 ### 4.4 Options that change the protocol
 

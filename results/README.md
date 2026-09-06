@@ -14,3 +14,5 @@ A run folder written by `scripts/train_mosaic.py` contains:
 | `expr_pred_full_<SLIDE>.npy` | Predicted 460-gene expression for every cell of each slide (skipped with `--no_save_full_predictions`) |
 | `val_indices_<VAL>_pct20.npy`, `test_indices_<TEST>_pct10.npy` | Exact cells used for validation and test (re-usable through `--indices_dir`) |
 | `classes.json`, `selected_gene_idx.npy`, `gene_selection.json`, `run_config.json` | Class order, gene subset (all 460 by default) and the full argument list of the run |
+| `expression_metrics.csv` | Written by `scripts/expression_metrics.py`: mean per-gene PCC and Spearman, MAE and RMSE on the val and test subsets |
+| `expression_metrics_per_gene.csv` | Per-gene PCC / Spearman / MAE / RMSE on the test subset |
