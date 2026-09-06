@@ -482,4 +482,4 @@ See [`CITATION.cff`](CITATION.cff).
 
 ## 9. License
 
-To be defined by the authors before public release.
+MIT. See [`LICENSE`](LICENSE).
