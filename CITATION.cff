@@ -1,5 +1,5 @@
 cff-version: 1.2.0
-title: "MOSAIC Morphology-Oriented Spatial Attention for Inferring Cell Expression"
+title: "Morphology-Oriented Spatial Attention for Inferring Cell Expression"
 version: 1.0.0
 license: "MIT"
 type: software
@@ -7,7 +7,7 @@ abstract: "MOSAIC predicts a 460-gene Xenium expression profile and a nine-class
 message: "If you use this software, please cite it as below."
 authors:
   - given-names: Thiago
-    family-names: Fernandes
+    family-names: Fernandes de Sousa
     affiliation: Universidade Federal de Goiás
   - given-names: Celso
     family-names: Camilo
@@ -15,6 +15,9 @@ authors:
   - given-names: Helder Takashi Imoto
     family-names: Nakaya
     affiliation: Hospital Israelita Albert Einstein
+  - given-names: Dyego
+    family-names: Fernandes de Sousa
+    affiliation: University of Colorado Boulder
   - given-names: Adriana
     family-names: Simizo
     affiliation: Faculdade Israelita de Ciências da Saúde Albert Einstein

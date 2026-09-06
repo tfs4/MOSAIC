@@ -2,8 +2,8 @@
 
 Code accompanying the paper
 
-> **MOSAIC: single-cell expression from H&E histology.**
-> T. Fernandes, C. Camilo, H. T. I. Nakaya, A. Simizo, M. C. C. Morais, M. F. Vesco, G. R. de-Mira.
+> **Morphology-Oriented Spatial Attention for Inferring Cell Expression.**
+> T. Fernandes de Sousa, C. Camilo, H. T. I. Nakaya, D. Fernandes de Sousa, A. Simizo, M. C. C. Morais, M. F. Vesco, G. R. de-Mira.
 > *Scientific Reports* (under review).
 
 MOSAIC predicts a 460-gene Xenium expression profile for every nucleus of an H&E slide from
