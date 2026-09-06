@@ -1,0 +1,10 @@
+,B_Cells,Endothelial_Cells,Epithelial_Cells,Fibroblasts,Glia_Cells,Lymphatic_Endothelial_Cells,Myeloid_Cells,T_Cells,Vascular_Smooth_Muscle
+B_Cells,2123,77,11,131,3,1,187,370,12
+Endothelial_Cells,91,803,10,305,33,22,138,13,102
+Epithelial_Cells,16,36,988,51,3,1,35,6,2
+Fibroblasts,311,203,55,1357,68,23,393,101,148
+Glia_Cells,29,49,3,122,151,2,80,23,38
+Lymphatic_Endothelial_Cells,2,9,1,38,1,15,2,3,90
+Myeloid_Cells,988,245,62,703,104,7,1845,371,198
+T_Cells,698,55,22,83,4,1,218,1251,10
+Vascular_Smooth_Muscle,12,116,10,88,11,2,59,5,4198

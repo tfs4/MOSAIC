@@ -34,9 +34,12 @@ data/*
 *.onnx
 *.ckpt
 
-# Experiment outputs (keep the folder README, drop artefacts)
-results/*
-!results/README.md
+# Experiment outputs: keep tables and configs, drop checkpoints / arrays
+results/**
+!results/**/
+!results/**/*.md
+!results/**/*.csv
+!results/**/*.json
 
 # Logs and process leftovers
 *.log
@@ -55,6 +58,7 @@ nohup.out
 *.tiff
 *.svs
 *.ndpi
+!results/**/*.png
 
 # Editors / OS
 .vscode/

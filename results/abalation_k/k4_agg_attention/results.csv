@@ -1,0 +1,2 @@
+train_image,val_image,test_image,val_fraction,test_fraction,train_size,val_size,test_size,seed,k_neighbors,aggregation_mode,use_graph,log1p_normalize,marker_weighted_loss,expr_val_pearson,expr_test_pearson,gene_select_method,gene_select_n,gene_selected_count,cls_val_f1,test_accuracy,test_f1_macro,test_f1_weighted
+UC6,UC7,UC1,0.2,0.1,223781,28941,20253,42,4,attention,False,False,True,0.27284378452190267,0.21848550640793452,none,200,460,0.6312199491048556,0.6284007307559374,0.541178471309754,0.6216924187098866
