@@ -53,6 +53,7 @@ MOSAIC/
 ├── tools/download_datasets_gdrive.py   internal helper to fetch prepared data on our servers
 ├── data/                        (git-ignored) prepared slides - see data/README.md
 ├── results/                     (git-ignored) outputs - see results/README.md
+├── .gitignore
 ├── requirements.txt
 ├── CITATION.cff
 └── README.md
@@ -214,18 +215,9 @@ part: every step encodes 1 + K patches per cell for ~224k cells, i.e. on the ord
 to two hours per epoch on a single modern GPU in our runs; early stopping usually ends
 training well before the 30-epoch cap. Phase B takes a few minutes.
 
-Seed robustness (Reviewer 2 item 3). Seed 42 is the paper run; only 0 and 20 are extra:
-
-```bash
-python3 scripts/run_seed_sweep.py \
-    --data_root data --num_workers 20 \
-    --seeds 0,20 --out_base results/seed_sweep
-```
-
-Each seed redraws the UC7 20% / UC1 10% subsets and retrains. Folders:
-`results/seed_sweep/mosaic_k6_seed0` and `mosaic_k6_seed20`. Summary:
-`results/seed_sweep/seed_sweep_results.csv`. Combine with `results/mosaic_k6_seed42`
-for the three-seed mean ± s.d. in the manuscript.
+Seed robustness (seeds 0 and 20) is in **section 5.2**. Each extra seed redraws the
+UC7 20 % / UC1 10 % subsets and retrains; combine those folders with
+`results/mosaic_k6_seed42` for the three-seed mean ± s.d.
 
 ### 4.2 Tables and gene-level analysis from a finished run
 
@@ -240,20 +232,12 @@ python scripts/expression_metrics.py --run_dir results/mosaic_k6_seed42
 python scripts/gene_level_analysis.py --run_dir results/mosaic_k6_seed42
 ```
 
-### 4.3 Neighbourhood ablation (K = 0, 4, 6, 8, 12)
+### 4.3 Neighbourhood and aggregation ablations
 
-```bash
-python scripts/run_ablation.py --ks 0,4,6,8,12 --aggregations attention \
-    --seed 42 --batch_size 64 --num_workers 8 \
-    --ablation_out_dir results/ablation_k
-python scripts/plot_ablation.py --input_dir results/ablation_k
-```
-
-`K = 0` is the backbone-only baseline (no neighbourhood). Every configuration re-uses the
-validation/test indices written by the first run, so all numbers are computed on exactly
-the same cells. To compare aggregation operators at fixed K use, e.g.,
-`--ks 6 --aggregations attention,mean,max`. Resume an interrupted grid with
-`--start_from N --indices_dir results/ablation_k/k0_agg_n_a`.
+The runs that actually exist under `results/` (K = 0, K = 4 attention, K = 6 mean,
+same cells as seed 42) are documented with copy-paste commands in **section 5**.
+`K = 0` is the backbone-only baseline. Every ablation must pass
+`--indices_dir results/mosaic_k6_seed42` so the numbers stay on the same cells.
 
 ### 4.3.1 Rotate train / val / test slides
 
@@ -307,7 +291,174 @@ python scripts/plot_neighborhood_figure.py --image_key UC6 --k 6 --seed 42 \
     --out_path results/figures/k6_neighbors_UC6.pdf
 ```
 
-## 5. Reproducibility notes
+## 5. Tutorial: every experiment currently in `results/`
+
+This section reproduces **only the runs that already exist locally under `results/`**.
+It is not a full ablation grid. Commands assume the repository root, the three
+prepared slides in `data/` (section 3), and a single GPU. Use `python3` if `python`
+is not on `PATH`. On a rented machine, start each command inside `tmux` so an SSH
+drop does not kill Phase A (the checkpoint is written only after Phase A ends).
+
+Shared protocol unless a subsection says otherwise:
+
+| Setting | Value |
+|---|---|
+| Train | UC6, 100 % |
+| Validation | UC7, stratified 20 % |
+| Test | UC1, stratified 10 % |
+| `k_neighbors` | 6 (except the K ablation) |
+| `aggregation_mode` | `attention` (except the mean run) |
+| `use_graph` / `log1p_normalize` | off |
+| `--batch_size` | 64 |
+| `--num_workers` | 20 |
+
+Folder names below match the directories on disk, including the typo
+`results/abalation_k` and the copied mean folder `k6_aff_mean`.
+
+**Order.** Run 5.1 first. The K and aggregation ablations reuse its val/test
+indices through `--indices_dir results/mosaic_k6_seed42`. Seeds 0 and 20 must
+**not** reuse those indices: each seed redraws the split.
+
+### 5.1 Paper protocol — `results/mosaic_k6_seed42/`
+
+K = 6, attention, seed 42. This is the reference run. All later ablations
+compare against these same 28,941 val / 20,253 test cells.
+
+```bash
+python3 scripts/train_mosaic.py \
+    --data_root data \
+    --train_image UC6 --val_image UC7 --test_image UC1 \
+    --val_fraction 0.2 --test_fraction 0.1 \
+    --k_neighbors 6 --aggregation_mode attention \
+    --seed 42 --batch_size 64 --num_workers 20 \
+    --out_dir results/mosaic_k6_seed42
+```
+
+When `results/mosaic_k6_seed42/results.csv` exists:
+
+```bash
+python3 scripts/expression_metrics.py --run_dir results/mosaic_k6_seed42 --data_root data
+python3 scripts/classification_tables.py --run_dir results/mosaic_k6_seed42
+python3 scripts/gene_level_analysis.py --run_dir results/mosaic_k6_seed42
+```
+
+### 5.2 Extra seeds — `results/seed_sweep/`
+
+Same protocol as 5.1, new split and new weights per seed. Do **not** pass
+`--indices_dir`. Seed 42 is already in `results/mosaic_k6_seed42/` and is not
+re-run here.
+
+| Folder | Seed |
+|---|---|
+| `results/seed_sweep/mosaic_k6_seed0/` | 0 |
+| `results/seed_sweep/mosaic_k6_seed20/` | 20 |
+
+Both seeds in one go (writes `results/seed_sweep/seed_sweep_results.csv`):
+
+```bash
+python3 scripts/run_seed_sweep.py \
+    --data_root data \
+    --seeds 0,20 \
+    --batch_size 64 --num_workers 20 \
+    --out_base results/seed_sweep
+```
+
+Or one seed at a time:
+
+```bash
+python3 scripts/train_mosaic.py \
+    --data_root data \
+    --train_image UC6 --val_image UC7 --test_image UC1 \
+    --val_fraction 0.2 --test_fraction 0.1 \
+    --k_neighbors 6 --aggregation_mode attention \
+    --seed 0 --batch_size 64 --num_workers 20 \
+    --out_dir results/seed_sweep/mosaic_k6_seed0
+
+python3 scripts/train_mosaic.py \
+    --data_root data \
+    --train_image UC6 --val_image UC7 --test_image UC1 \
+    --val_fraction 0.2 --test_fraction 0.1 \
+    --k_neighbors 6 --aggregation_mode attention \
+    --seed 20 --batch_size 64 --num_workers 20 \
+    --out_dir results/seed_sweep/mosaic_k6_seed20
+```
+
+Resume the sweep if a seed already finished:
+
+```bash
+python3 scripts/run_seed_sweep.py \
+    --data_root data --seeds 0,20 --num_workers 20 \
+    --out_base results/seed_sweep --skip_existing
+```
+
+### 5.3 Neighbourhood size — `results/abalation_k/`
+
+Same cells as seed 42 (`--indices_dir`). Attention for K > 0. The parent
+folder on disk is spelled `abalation_k`.
+
+| Folder | K | Aggregation |
+|---|---|---|
+| `results/abalation_k/k0_agg_n_a/` | 0 (target cell only) | none |
+| `results/abalation_k/k4_agg_attention/` | 4 | attention |
+
+K = 6 attention is 5.1, not repeated here. K = 8 / 12 were not run.
+
+```bash
+python3 scripts/run_ablation.py \
+    --data_root data \
+    --ks 0,4 --aggregations attention \
+    --seed 42 --batch_size 64 --num_workers 20 \
+    --indices_dir results/mosaic_k6_seed42 \
+    --ablation_out_dir results/abalation_k
+```
+
+A single configuration (for example only K = 4):
+
+```bash
+python3 scripts/run_ablation.py \
+    --data_root data \
+    --ks 4 --aggregations attention \
+    --seed 42 --batch_size 64 --num_workers 20 \
+    --indices_dir results/mosaic_k6_seed42 \
+    --ablation_out_dir results/abalation_k
+```
+
+### 5.4 Mean aggregation — `results/ablation_agg/`
+
+K = 6, **mean** pooling of the six neighbours, same cells as seed 42. This is
+the attention-vs-mean control. The script writes `k6_agg_mean/`; the local copy
+may appear as `k6_aff_mean/` if the folder was renamed after the run.
+
+| Folder | K | Aggregation |
+|---|---|---|
+| `results/ablation_agg/k6_agg_mean/` (or `k6_aff_mean/`) | 6 | mean |
+
+```bash
+python3 scripts/run_ablation.py \
+    --data_root data \
+    --ks 6 --aggregations mean \
+    --seed 42 --batch_size 64 --num_workers 20 \
+    --indices_dir results/mosaic_k6_seed42 \
+    --ablation_out_dir results/ablation_agg
+```
+
+Do not run mean at K = 4. Compare this `results.csv` to
+`results/mosaic_k6_seed42/results.csv` (K = 6 attention) and
+`results/abalation_k/k0_agg_n_a/results.csv` (no neighbours).
+
+### 5.5 What each finished folder should contain
+
+See [`results/README.md`](results/README.md). The file that means the run is
+complete is `results.csv`. Then, for any of the folders above:
+
+```bash
+python3 scripts/expression_metrics.py --run_dir <RUN_DIR> --data_root data
+```
+
+That writes `expression_metrics.csv` and `expression_metrics_per_gene.csv`
+(Pearson, Spearman, MAE, RMSE on the val and test subsets).
+
+## 6. Reproducibility notes
 
 * All random sources are seeded (`--seed`): Python, NumPy, PyTorch (CPU/CUDA), DataLoader
   shuffling and per-worker augmentation; cuDNN runs in deterministic mode and TF32 is
@@ -317,7 +468,7 @@ python scripts/plot_neighborhood_figure.py --image_key UC6 --k 6 --seed 42 \
   checks that they reproduce the sizes reported in the paper (28,941 and 20,253 cells).
 * `results.csv` and `run_config.json` in each run folder record every setting used.
 
-## 6. Hardware notes
+## 7. Hardware notes
 
 All experiments ran on a single NVIDIA GPU with mixed precision disabled (full fp32 for
 determinism). GPU memory scales with `--batch_size x (1 + K)` patches; if you run out of
@@ -325,10 +476,10 @@ memory reduce `--batch_size` (the learning rate `--lr_expr` may then need to be 
 accordingly) and keep `--num_workers` close to the number of CPU cores available for JPEG/PNG
 decoding, which is the usual bottleneck.
 
-## 7. Citation
+## 8. Citation
 
 See [`CITATION.cff`](CITATION.cff).
 
-## 8. License
+## 9. License
 
 To be defined by the authors before public release.

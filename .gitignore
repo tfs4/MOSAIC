@@ -1,12 +1,23 @@
 # Python
 __pycache__/
 *.py[cod]
+*$py.class
 *.egg-info/
+.eggs/
+dist/
+build/
+*.egg
 .venv/
 venv/
 .env
+.env.*
+.python-version
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+.ipynb_checkpoints/
 
-# Data (never versioned - see data/README.md)
+# Data (never versioned — see data/README.md)
 data/*
 !data/README.md
 *.zarr
@@ -20,12 +31,21 @@ data/*
 # Model checkpoints
 *.pt
 *.pth
+*.onnx
+*.ckpt
 
-# Experiment outputs (keep small tables, drop heavy artefacts)
+# Experiment outputs (keep the folder README, drop artefacts)
 results/*
 !results/README.md
 
-# Images
+# Logs and process leftovers
+*.log
+logs/
+nohup.out
+*.out
+*.pid
+
+# Images / slides (patches live under data/)
 *.png
 *.jpg
 *.jpeg
@@ -33,9 +53,15 @@ results/*
 *.webp
 *.tif
 *.tiff
+*.svs
+*.ndpi
 
 # Editors / OS
 .vscode/
 .idea/
+.cursor/
+*.swp
+*.swo
+*~
 .DS_Store
 Thumbs.db
